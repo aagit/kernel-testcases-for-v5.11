@@ -8,7 +8,7 @@
  *  IMPORTANT: use at your own risk. Don't try to run this unless you
  *  know what you're doing.
  *
- *  gcc -O2 -o vmsplice-oom vsmplice-oom.c -Wall
+ *  gcc -O2 -o vmsplice-oom vmsplice-oom.c -Wall
  *  ./vmsplice-oom [--fork] [--linear]
  *  ./vmsplice-oom
  *  ./vmsplice-oom --fork
