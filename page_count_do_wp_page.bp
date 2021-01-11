@@ -1,0 +1,138 @@
+#!/usr/bin/env bpftrace
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ *  Copyright (C) 2021  Red Hat, Inc.
+ *
+ * This eBPF tracing program detects copy-on-write faults happening as
+ * result of a unprotect event (a mprotect syscall transitioning a
+ * wrprotected mapping into a writable and non executable mapping) on
+ * MAP_ANONYMOUS MAP_PRIVATE virtual ranges.
+ *
+ * Every time a "COW_after_unprotect" event is reported, it means a
+ * outstanding FOLL_LONGTERM pin on such virtual address has silently
+ * lost mm coherency in the latest v5.11 kernel. (ABI break started in
+ * v5.9)
+ *
+ * The program first detects the MAP_ANONYMOUS ranges that transition
+ * from wrprotected to PROT_READ|PROT_WRITE !PROT_EXEC, then it checks
+ * if any do_wp_page COW on pages with mapcount == 1 (not shared and
+ * that must not be copied) are happening in those mprotect ranges. It
+ * also keeps fork() out of the equation since fork won't wrprotect
+ * FOLL_LONGTERM pins in the latest v5.11.
+ *
+ * The detection is a best effort and may give false positives,
+ * further code analysis is required to be sure.
+ *
+ * To test:
+ *	dnf install bpftrace || emerge -1 bpftrace
+ *	./page_count_do_wp_page.bp
+ *
+ * Fixed in https://github.com/aagit/aa/tree/mapcount_unshare
+ */
+
+#include <linux/mm.h>
+
+#define ENTRIES 2000
+
+kprobe:mprotect_fixup
+{
+	$vma = (struct vm_area_struct *)arg0;
+	$oldflags = $vma->vm_flags;
+	if ($vma->vm_ops != 0 || $vma->anon_vma == 0 || $vma->vm_file != 0) {
+		return;
+	}
+	$newflags = arg4;
+	$start = arg2;
+	$end = arg3;
+	@unprotect_flags[tid, comm, $oldflags, $newflags] = ($start, $end);
+	$old_write = $oldflags & VM_WRITE;
+	$new_write = $newflags & VM_WRITE;
+	if ($old_write != 0 || $new_write == 0) {
+		if ($new_write == 0) {
+			$id = 0;
+			while ($id < ENTRIES) {
+				$range = @unprotect_ranges[tid, $id];
+				if ($range.0 >= $end || $range.1 <= $start) {
+					$id = $id + 1;
+					continue;
+				}
+				printf("wrprotect %lx:%lx %d %s\n", $start, $end, tid, comm);
+				delete(@unprotect_ranges[tid, $id]);
+				break;
+			}
+		}
+		return;
+	}
+	if ($newflags & VM_EXEC) {
+		return;
+	}
+	printf("unprotect %lx:%lx %d %s\n", $start, $end, tid, comm);
+	$id = 0;
+	while ($id < ENTRIES) {
+		$range = @unprotect_ranges[tid, $id];
+		if ($range.0 == $start && $range.1 == $end) {
+			return;
+		}
+		$id = $id + 1;
+	}
+	$_id = @area_id[tid] % ENTRIES;
+	@area_id[tid] = $_id + 1;
+	@unprotect_ranges[tid, $_id] = ($start, $end);
+}
+
+kprobe:do_wp_page
+{
+	$vmf = (struct vm_fault *)arg0;
+	$vma = $vmf->vma;
+	if ($vma->vm_flags & VM_SHARED ||
+	    $vma->vm_ops != 0 || $vma->anon_vma == 0 || $vma->vm_file != 0) {
+		return;
+	}
+	@wp[tid] = $vmf->address;
+}
+
+kretprobe:do_wp_page
+{
+	delete(@wp[tid]);
+}
+
+kprobe:unlock_page /@wp[tid]/
+{
+	$page = (struct page *)arg0;
+	if ($page->_mapcount.counter != 0) {
+		return;
+	}
+	$addr = @wp[tid];
+	@COW_addr[tid, comm, $addr] = count();
+
+	delete(@wp[tid]);
+
+	$id = 0;
+	while ($id < ENTRIES) {
+		$range = @unprotect_ranges[tid, $id];
+		$start = $range.0;
+		$end = $range.1;
+		$id = $id + 1;
+		if ($start > $addr || $addr >= $end) {
+			continue;
+		}
+		@COW_after_unprotect[tid, comm, $start, $end] = count();
+		printf("COW_after_unprotect %lx %d %s\n", $addr, tid, comm);
+		break;
+	}
+}
+
+kprobe:copy_process
+{
+	$id = 0;
+	while ($id < ENTRIES) {
+		delete(@unprotect_ranges[tid, $id]);
+		$id = $id + 1;
+	}
+}
+
+END
+{
+	clear(@wp);
+	clear(@area_id);
+}
