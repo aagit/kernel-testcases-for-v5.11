@@ -24,6 +24,9 @@
  *
  *  Copying any GUP pinned page within mprotect was also suggested, but it
  *  would stll break coherency of readonly long term GUP pins.
+ *
+ *  Fixed in:
+ *  https://git.kernel.org/pub/scm/linux/kernel/git/andrea/aa.git/log/?h=mapcount_deshare
  */
 
 #define _GNU_SOURCE

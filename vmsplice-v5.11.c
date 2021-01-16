@@ -3,6 +3,9 @@
  * From: Jann Horn <jannh@google.com>
  * fixed in 17839856fd588f4ab6b789f482ed3ffd7c403e1f but reintroduced
  * and still affects v5.11-rc2 commit 71c061d2443814de15e177489d5cc00a4a253ef3
+ *
+ * Fixed in:
+ * https://git.kernel.org/pub/scm/linux/kernel/git/andrea/aa.git/log/?h=mapcount_deshare
  */
 
 #define _GNU_SOURCE
