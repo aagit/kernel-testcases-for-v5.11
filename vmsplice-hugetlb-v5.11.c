@@ -3,8 +3,10 @@
  * https://bugs.chromium.org/p/project-zero/issues/detail?id=2045
  * Which uses hugetlb instead.
  *
- * Note that you need at least one hugetlb page, for example, via:
- *   echo 1 > /sys/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages
+ * Note that you need at least two hugetlb pages, for example, via:
+ *   echo 2 > /sys/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages
+ *
+ * Fixed in https://github.com/aagit/aa/tree/mapcount_unshare
  */
 
 #define _GNU_SOURCE
