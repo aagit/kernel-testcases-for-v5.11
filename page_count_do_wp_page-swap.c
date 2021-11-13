@@ -14,7 +14,7 @@
  *  This is caused by the VM design flaw introduced in commit
  *  09854ba94c6aad7886996bfbee2530b3d8a7f4f4.
  *
- *  Fixed in https://github.com/aagit/aa/tree/mapcount_unshare
+ *  Fixed in https://gitlab.com/aarcange/aa/-/tree/mapcount_unshare
  */
 
 #define _GNU_SOURCE

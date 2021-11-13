@@ -6,7 +6,7 @@
  * Note that you need at least two hugetlb pages, for example, via:
  *   echo 2 > /sys/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages
  *
- * Fixed in https://github.com/aagit/aa/tree/mapcount_unshare
+ * Fixed in https://gitlab.com/aarcange/aa/-/tree/mapcount_unshare
  */
 
 #define _GNU_SOURCE

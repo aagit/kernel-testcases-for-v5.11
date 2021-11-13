@@ -23,7 +23,7 @@
  *  Copying any GUP pinned page within mprotect was also suggested, but it
  *  would stll break coherency of readonly long term GUP pins.
  *
- *  Fixed in https://github.com/aagit/aa/tree/mapcount_unshare
+ *  Fixed in https://gitlab.com/aarcange/aa/-/tree/mapcount_unshare
  */
 
 #define _GNU_SOURCE

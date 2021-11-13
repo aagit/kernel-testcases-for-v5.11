@@ -6,7 +6,7 @@
  * 17839856fd588f4ab6b789f482ed3ffd7c403e1f, but reintroduced and still
  * affects v5.15-rc3 commit 4de593fb965fc2bd11a0b767e0c65ff43540a6e4
  *
- * Fixed in https://github.com/aagit/aa/tree/mapcount_unshare
+ * Fixed in https://gitlab.com/aarcange/aa/-/tree/mapcount_unshare
  */
 
 #define _GNU_SOURCE

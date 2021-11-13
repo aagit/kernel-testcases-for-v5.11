@@ -27,7 +27,7 @@
  *	dnf install bpftrace || emerge -1 bpftrace
  *	./page_count_do_wp_page.bp
  *
- * Fixed in https://github.com/aagit/aa/tree/mapcount_unshare
+ * Fixed in https://gitlab.com/aarcange/aa/-/tree/mapcount_unshare
  */
 
 #include <linux/mm.h>
